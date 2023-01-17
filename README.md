@@ -19,9 +19,17 @@ Just a simple little wrapper around `image`, `imageproc`, `rusttype` intended fo
 See auto-generated TS annotations.
 
 
+## Benchmark
+
+```
+makeImgDrawWasm done in 105 ms
+makeImgSatori done in 7708 ms
+```
+
+
 ## Dev
 
-Build with `wasm-pack build`:
+Build:
 
 ```
 wasm-pack build
