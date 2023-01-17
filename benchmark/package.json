@@ -1,0 +1,17 @@
+{
+  "name": "draw-wasm-benchmark",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.mjs",
+  "scripts": {
+    "start": "node --experimental-wasm-modules index.mjs"
+  },
+  "author": "",
+  "dependencies": {
+    "@resvg/resvg-js": "^2.2.0",
+    "draw-wasm": "file:../pkg",
+    "satori": "^0.1.1"
+  },
+  "license": "ISC"
+}
