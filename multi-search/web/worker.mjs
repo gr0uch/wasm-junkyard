@@ -1,5 +1,5 @@
 import * as Comlink from "./comlink.mjs";
-import init, { initThreadPool, /*match_single,*/ SearchIndex } from "../pkg/multi_search.js";
+import init, { initThreadPool, /*matchSingle,*/ SearchIndex } from "../pkg/multi_search.js";
 
 const internalMap = new Map();
 
@@ -25,7 +25,7 @@ const api = {
     const t1 = Date.now();
     let i = 0;
     for (const word in json) {
-      index.load_result(word);
+      index.loadResult(word);
       i++;
     }
     console.log(`loaded ${i} results in ${Date.now() - t1} ms`);
