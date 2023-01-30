@@ -1,47 +1,46 @@
-import init, { SearchIndex, match_single } from "../pkg/multi_search.js";
+import * as Comlink from "./comlink.mjs";
 
-(async () => {
-  const [_, dictionary] = await Promise.all([
-    init(),
-    (async () => {
-      const res = await fetch("dictionary-compact.json");
-      return res.json();
-    })(),
-  ]);
+const worker = new Worker("/web/worker.mjs", { type: "module" });
+const api = Comlink.wrap(worker);
 
-  const index = SearchIndex.new();
+await api.init();
+const indexPtr = await api.SearchIndex();
+await api.fetchResults(indexPtr, "/web/dictionary-compact.json");
 
+const { container, input, list, info } = renderUI();
+document.body.appendChild(container);
+
+let workerSemaphore;
+let waiterSemaphore;
+let currentValue;
+input.addEventListener("input", async (event) => {
+  currentValue = event.target.value;
+
+  if (workerSemaphore) {
+    if (waiterSemaphore) return;
+    waiterSemaphore = (async () => {
+      await workerSemaphore;
+      workerSemaphore = doSearch(currentValue);
+      waiterSemaphore = null;
+    })();
+    return;
+  }
+
+  workerSemaphore = doSearch(currentValue);
+  await workerSemaphore;
+  workerSemaphore = null;
+});
+
+async function doSearch(value) {
   const t0 = Date.now();
-  let i = 0;
-  for (const word in dictionary) {
-    index.load_result(word);
-    i++;
+  const len = list.children.length;
+  const results = await api.searchSingleThread(indexPtr, value, len);
+  info.textContent = `searched in ${Date.now() - t0} ms`;
+  for (let i = 0; i < len; i++) {
+    const html = results[i]?.[1] ?? "";
+    list.children[i].innerHTML = html;
   }
-  console.log(`loaded ${i} results in ${Date.now() - t0} ms`);
-
-  const { container, input, list, info } = renderUI();
-  document.body.appendChild(container);
-
-  let debounceTimer;
-  input.addEventListener("input", (event) => {
-    const { target: { value } } = event;
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(async () => {
-      await Promise.resolve();
-      doSearch(value);
-    }, 250);
-  });
-
-  function doSearch(value) {
-    const t0 = Date.now();
-    const len = list.children.length;
-    const results = index.search_single_thread(value, len);
-    for (let i = 0; i < len; i++) {
-      list.children[i].innerHTML = results[i]?.[1] ?? "";
-    }
-    info.textContent = `searched in ${Date.now() - t0} ms`;
-  }
-})();
+}
 
 function renderUI() {
   const container = document.createElement("div");

@@ -48,6 +48,9 @@ impl SearchIndex {
         let mut results: Vec<(&str, Match)> = Vec::new();
 
         for sample in sample_space {
+            if input.len() > sample.len() {
+                continue;
+            }
             let match_opt = best_match(&input, sample);
             if match_opt.is_none() {
                 continue;
