@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.140.0/http/server.ts";
 
 const mimeMap = new Map([
   ["html", "text/html"],
+  ["css", "text/css"],
   ["mjs", "application/javascript"],
   ["js", "application/javascript"],
   ["json", "application/json"],
@@ -18,12 +19,12 @@ const additionalHeaders = {
 };
 
 const memCache = new Map();
-const CACHE_TIME = 2 * 60 * 100;
+const CACHE_TIME = 5 * 1000;
 
 async function handleRequest(request: Request): Promise<Response> {
   const { pathname } = new URL(request.url);
   const mappedPath = pathMap.get(pathname) ?? pathname;
-  const ext = mappedPath.match(/\.(.*?)$/)?.[1] ?? "";
+  const ext = mappedPath.match(/\.([^.]*?)$/)?.[1] ?? "";
 
   try {
     let file = memCache.get(mappedPath);

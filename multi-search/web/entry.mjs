@@ -34,11 +34,13 @@ input.addEventListener("input", async (event) => {
 async function doSearch(value) {
   const t0 = Date.now();
   const len = list.children.length;
-  const results = await api.searchSingleThread(indexPtr, value, len);
-  info.textContent = `searched in ${Date.now() - t0} ms`;
+  const { count, results } = await api.search(indexPtr, value, len);
+  info.textContent = `${count} results, searched in ${Date.now() - t0} ms`;
   for (let i = 0; i < len; i++) {
     const html = results[i]?.[1] ?? "";
-    list.children[i].innerHTML = html;
+    const element = list.children[i];
+    element.innerHTML = html;
+    element.inert = !html;
   }
 }
 
@@ -51,12 +53,15 @@ function renderUI() {
   input.autofocus = true;
 
   for (let i = 0; i < 10; i++) {
-    list.appendChild(document.createElement("li"));
+    const li = document.createElement("li");
+    li.inert = true;
+    list.appendChild(li);
   }
 
+  container.classList.add("search-container");
   container.appendChild(input);
-  container.appendChild(info);
   container.appendChild(list);
+  container.appendChild(info);
 
   return {
     container,

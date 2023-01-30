@@ -1,11 +1,12 @@
 import * as Comlink from "./comlink.mjs";
-import init, { /*match_single,*/ SearchIndex } from "../pkg/multi_search.js";
+import init, { initThreadPool, /*match_single,*/ SearchIndex } from "../pkg/multi_search.js";
 
 const internalMap = new Map();
 
 const api = {
   async init() {
     await init();
+    await initThreadPool(navigator.hardwareConcurrency);
   },
 
   SearchIndex() {
@@ -30,9 +31,9 @@ const api = {
     console.log(`loaded ${i} results in ${Date.now() - t1} ms`);
   },
 
-  searchSingleThread(ptr, value, len) {
+  search(ptr, value, len) {
     const index = internalMap.get(ptr);
-    return index.search_single_thread(value, len);
+    return index.search(value, len);
   }
 };
 

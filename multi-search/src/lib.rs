@@ -1,5 +1,7 @@
 mod utils;
 
+use serde::{Serialize, Deserialize};
+use rayon::prelude::*;
 use sublime_fuzzy::{best_match, format_simple, Match};
 use wasm_bindgen::prelude::*;
 
@@ -9,9 +11,23 @@ use wasm_bindgen::prelude::*;
 #[global_allocator]
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
+pub use wasm_bindgen_rayon::init_thread_pool;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn log(s: &str);
+}
+
 #[wasm_bindgen]
 pub struct SearchIndex {
     sample_space: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SearchResults {
+    count: usize,
+    results: Vec<(String, String, Match)>,
 }
 
 #[wasm_bindgen]
@@ -33,30 +49,32 @@ pub fn match_single(input: &str, target: &str, should_format: bool) -> JsValue {
 
 #[wasm_bindgen]
 impl SearchIndex {
-    pub fn new() -> SearchIndex {
+    pub fn new() -> Self {
         utils::set_panic_hook();
         let sample_space = Vec::new();
-        SearchIndex { sample_space }
+        Self { sample_space }
     }
 
     pub fn load_result(&mut self, result: String) {
         self.sample_space.push(result)
     }
 
-    pub fn search_single_thread(&mut self, input: String, results_length: usize) -> JsValue {
+    pub fn search(&mut self, input: String, results_length: usize) -> JsValue {
         let sample_space = &self.sample_space;
-        let mut results: Vec<(&str, Match)> = Vec::new();
-
-        for sample in sample_space {
-            if input.len() > sample.len() {
-                continue;
-            }
-            let match_opt = best_match(&input, sample);
-            if match_opt.is_none() {
-                continue;
-            }
-            results.push((sample, match_opt.unwrap()));
-        }
+        let mut results: Vec<(&String, Match)> = sample_space
+            // WTF: this is somehow slower than .iter()?
+            .par_iter()
+            .filter_map(|sample| {
+                if input.len() > sample.len() {
+                    return None;
+                }
+                let match_opt = best_match(&input, &sample);
+                if match_opt.is_none() {
+                    return None;
+                }
+                Some((sample, match_opt.unwrap()))
+            })
+            .collect();
 
         results.sort_by(|(s1, m1), (s2, m2)| {
             (m2.score() + s1.len() as isize)
@@ -64,18 +82,22 @@ impl SearchIndex {
                 .unwrap()
         });
 
+        let count = results.len();
         results.truncate(results_length);
 
-        let formatted_results: Vec<(&str, String, Match)> = results
+        let formatted_results: Vec<(String, String, Match)> = results
             .into_iter()
             .map(|(s, match_obj)| {
-                let formatted = format_simple(&match_obj, s, "<strong>", "</strong>");
-                (s, formatted, match_obj)
+                let formatted = format_simple(&match_obj, &s, "<strong>", "</strong>");
+                (s.clone(), formatted, match_obj)
             })
             .collect();
 
-        serde_wasm_bindgen::to_value(&formatted_results).unwrap()
-    }
+        let search_results = SearchResults {
+            count,
+            results: formatted_results,
+        };
 
-    // todo: multi-threading
+        serde_wasm_bindgen::to_value(&search_results).unwrap()
+    }
 }

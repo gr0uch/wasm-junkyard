@@ -8,7 +8,7 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [features]
-default = ["console_error_panic_hook", "wee_alloc"]
+default = ["console_error_panic_hook"]
 
 [dependencies]
 wasm-bindgen = "0.2.83"
@@ -26,6 +26,8 @@ wee_alloc = { version = "0.4.5", optional = true }
 sublime_fuzzy = { version = "0.7.0", features = ["serde_support"] }
 serde-wasm-bindgen = "0.4.5"
 serde = { version = "1.0.152", features = ["derive"] }
+rayon = "1.6.1"
+wasm-bindgen-rayon = { version = "1.0.3", features = ["no-bundler"] }
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.33"
