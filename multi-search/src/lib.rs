@@ -17,6 +17,8 @@ pub use wasm_bindgen_rayon::init_thread_pool;
 extern "C" {
     #[wasm_bindgen(js_namespace = console)]
     fn log(s: &str);
+    #[wasm_bindgen(js_namespace = Date)]
+    fn now() -> u32;
 }
 
 #[wasm_bindgen]
@@ -62,18 +64,21 @@ impl SearchIndex {
 
     pub fn search(&mut self, input: String, results_length: usize) -> JsValue {
         let sample_space = &self.sample_space;
-        let mut results: Vec<(&str, Match)> = sample_space
-            // WTF: this is somehow slower than .iter()?
-            .par_iter()
-            .filter_map(|sample| {
-                if input.len() > sample.len() {
-                    return None;
-                }
-                let match_opt = best_match(&input, &sample);
-                if match_opt.is_none() {
-                    return None;
-                }
-                Some((sample.as_str(), match_opt.unwrap()))
+        let chunks: Vec<_> = sample_space.chunks(1000).collect();
+
+        let mut results: Vec<(&str, Match)> = chunks
+            .into_par_iter()
+            .flat_map_iter(|inner_chunks| {
+                inner_chunks.into_iter().filter_map(|sample| {
+                    if input.len() > sample.len() {
+                        return None;
+                    }
+                    let match_opt = best_match(&input, &sample);
+                    if match_opt.is_none() {
+                        return None;
+                    }
+                    Some((sample.as_str(), match_opt.unwrap()))
+                })
             })
             .collect();
 
