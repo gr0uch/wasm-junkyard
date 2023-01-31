@@ -1,5 +1,5 @@
 import * as Comlink from "./comlink.mjs";
-import init, { initThreadPool, /*matchSingle,*/ SearchIndex } from "../pkg/multi_search.js";
+import init, { initThreadPool, /*matchSingle,*/ SearchIndex } from "../pkg/parallel_search.js";
 
 const internalMap = new Map();
 

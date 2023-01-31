@@ -1,7 +1,7 @@
 mod utils;
 
-use serde::{Serialize, Deserialize};
 use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 use sublime_fuzzy::{best_match, format_simple, Match};
 use wasm_bindgen::prelude::*;
 
@@ -58,31 +58,42 @@ impl SearchIndex {
     }
 
     #[wasm_bindgen(js_name = loadResult)]
-    pub fn load_result(&mut self, result: String) {
-        self.sample_space.push(result)
+    pub fn load_result(&mut self, result: &str) {
+        self.sample_space.push(result.to_owned())
+    }
+
+    fn iter_search_chunks(input: String, inner_chunks: &[String]) -> Vec<(String, Match)> {
+        inner_chunks
+            .into_iter()
+            .filter_map(move |sample| {
+                if input.len() > sample.len() {
+                    return None;
+                }
+                let match_opt = best_match(&input, &sample);
+                if match_opt.is_none() {
+                    return None;
+                }
+                Some((sample.clone(), match_opt.unwrap()))
+            })
+            .collect()
+    }
+
+    fn iter_search(
+        input: String,
+        chunks: Vec<&[String]>,
+    ) -> impl '_ + ParallelIterator<Item = (String, Match)> {
+        chunks
+            .into_par_iter()
+            .flat_map_iter(move |inner_chunks| Self::iter_search_chunks(input.clone(), inner_chunks))
     }
 
     pub fn search(&mut self, input: String, results_length: usize) -> JsValue {
         let sample_space = &self.sample_space;
         let chunks: Vec<_> = sample_space.chunks(1000).collect();
 
-        let mut results: Vec<(&str, Match)> = chunks
-            .into_par_iter()
-            .flat_map_iter(|inner_chunks| {
-                inner_chunks.into_iter().filter_map(|sample| {
-                    if input.len() > sample.len() {
-                        return None;
-                    }
-                    let match_opt = best_match(&input, &sample);
-                    if match_opt.is_none() {
-                        return None;
-                    }
-                    Some((sample.as_str(), match_opt.unwrap()))
-                })
-            })
-            .collect();
+        let mut results: Vec<(String, Match)> = Self::iter_search(input, chunks).collect();
 
-        results.sort_by(|(s1, m1), (s2, m2)| {
+        results.par_sort_unstable_by(|(s1, m1), (s2, m2)| {
             (m2.score() + s1.len() as isize)
                 .partial_cmp(&(m1.score() + s2.len() as isize))
                 .unwrap()
@@ -92,7 +103,7 @@ impl SearchIndex {
         results.truncate(results_length);
 
         let formatted_results: Vec<(String, String)> = results
-            .into_iter()
+            .into_par_iter()
             .map(|(s, match_obj)| {
                 let formatted = format_simple(&match_obj, &s, "<strong>", "</strong>");
                 (s.to_owned(), formatted)
