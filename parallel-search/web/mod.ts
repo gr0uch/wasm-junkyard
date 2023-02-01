@@ -18,7 +18,7 @@ const additionalHeaders = {
   "Cross-Origin-Opener-Policy": "same-origin",
 };
 
-const memCache = new Map();
+const memCache: Map<string, Uint8Array> = new Map();
 const CACHE_TIME = 5 * 1000;
 
 async function handleRequest(request: Request): Promise<Response> {

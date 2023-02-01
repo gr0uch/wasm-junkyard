@@ -62,9 +62,9 @@ impl SearchIndex {
         self.sample_space.push(result.to_owned())
     }
 
-    fn iter_search_chunks(input: String, inner_chunks: &[String]) -> Vec<(String, Match)> {
+    fn iter_search_chunks(input: String, inner_chunks: Vec<String>) -> Vec<(String, Match)> {
         inner_chunks
-            .into_iter()
+            .iter()
             .filter_map(move |sample| {
                 if input.len() > sample.len() {
                     return None;
@@ -78,18 +78,19 @@ impl SearchIndex {
             .collect()
     }
 
+    // FIXME: this should probably not use static lifetime...
     fn iter_search(
         input: String,
-        chunks: Vec<&[String]>,
-    ) -> impl '_ + ParallelIterator<Item = (String, Match)> {
-        chunks
-            .into_par_iter()
-            .flat_map_iter(move |inner_chunks| Self::iter_search_chunks(input.clone(), inner_chunks))
+        chunks: Vec<Vec<String>>,
+    ) -> impl 'static + ParallelIterator<Item = (String, Match)> {
+        chunks.into_par_iter().flat_map_iter(move |inner_chunks| {
+            Self::iter_search_chunks(input.clone(), inner_chunks)
+        })
     }
 
     pub fn search(&mut self, input: String, results_length: usize) -> JsValue {
         let sample_space = &self.sample_space;
-        let chunks: Vec<_> = sample_space.chunks(1000).collect();
+        let chunks: Vec<_> = sample_space.chunks(1000).map(|s| s.to_vec()).collect();
 
         let mut results: Vec<(String, Match)> = Self::iter_search(input, chunks).collect();
 
