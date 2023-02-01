@@ -1,6 +1,5 @@
 mod utils;
 
-use serde::{Serialize, Deserialize};
 use image::{
     codecs::png::{PngDecoder, PngEncoder},
     ImageBuffer, ImageDecoder, ImageEncoder, Pixel, Rgba, RgbaImage,
@@ -8,6 +7,7 @@ use image::{
 use imageproc::drawing::draw_text_mut;
 use once_cell::sync::Lazy;
 use rusttype::{Font, Scale};
+use serde::{Deserialize, Serialize};
 use std::{collections::HashMap, sync::Mutex};
 use wasm_bindgen::prelude::*;
 
@@ -21,6 +21,12 @@ pub struct FontConfig {
     pub rgba: Vec<u8>,
     pub size: f32,
     pub font_name: String,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct SpriteOptions {
+    pub resize: [u32; 2],
+    pub filter_type: String,
 }
 
 #[wasm_bindgen(js_name = loadFont)]
@@ -58,12 +64,7 @@ impl DrawImage {
     }
 
     #[wasm_bindgen(js_name = drawText)]
-    pub fn draw_text(
-        &mut self,
-        coords: Box<[i32]>,
-        font_config: JsValue,
-        text: String,
-    ) {
+    pub fn draw_text(&mut self, coords: Box<[i32]>, font_config: JsValue, text: String) {
         let [left, top]: [i32; 2] = (*coords).try_into().unwrap();
         let config: FontConfig = serde_wasm_bindgen::from_value(font_config).unwrap();
         let color: [u8; 4] = (*config.rgba).try_into().unwrap();
@@ -80,12 +81,30 @@ impl DrawImage {
     }
 
     #[wasm_bindgen(js_name = drawSpritePNG)]
-    pub fn draw_sprite_png(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>) {
+    pub fn draw_sprite_png(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
         let [left, top]: [u32; 2] = (*coords).try_into().unwrap();
         let decoded_sprite = PngDecoder::new(&*sprite).unwrap();
-        let (w, h) = decoded_sprite.dimensions();
+        let (mut w, mut h) = decoded_sprite.dimensions();
         let mut sprite_image: RgbaImage = ImageBuffer::new(w, h);
         decoded_sprite.read_image(&mut sprite_image).unwrap();
+
+        let opts = serde_wasm_bindgen::from_value(options);
+        if opts.is_ok() {
+            let opt: SpriteOptions = opts.unwrap();
+            let target_w = opt.resize[0];
+            let target_h = opt.resize[1];
+            w = target_w;
+            h = target_h;
+            let filter_type = match opt.filter_type.as_str() {
+                "Nearest" => image::imageops::FilterType::Nearest,
+                "Triangle" => image::imageops::FilterType::Triangle,
+                "CatmullRom" => image::imageops::FilterType::CatmullRom,
+                "Gaussian" => image::imageops::FilterType::Gaussian,
+                "Lanczos3" => image::imageops::FilterType::Lanczos3,
+                _ => panic!("invalid filter type!"),
+            };
+            sprite_image = image::imageops::resize(&sprite_image, target_w, target_h, filter_type);
+        }
 
         for x in 0..w {
             for y in 0..h {

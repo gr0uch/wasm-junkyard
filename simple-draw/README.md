@@ -8,15 +8,15 @@ Just a simple little wrapper around `image`, `imageproc`, `rusttype` intended fo
 ## Features
 
 - [x] Fill rectangle with solid color.
-- [x] Draw PNGs as blended sprites.
-- [x] Draw text.
+- [x] Draw PNGs as blended sprites, and optionally resize them.
+- [x] Draw text with custom fonts, sizes, & colors.
 - [x] Export PNG image.
 - [ ] Do a barrel roll.
 
 
 ## Usage
 
-See auto-generated TS annotations.
+See [benchmark script](/simple-draw/benchmark/index.mjs) and auto-generated TS annotations.
 
 
 ## Benchmark
@@ -32,7 +32,7 @@ makeImgSatori done in 7708 ms
 Build:
 
 ```
-wasm-pack build
+wasm-pack build --target nodejs
 ```
 
 Test:
