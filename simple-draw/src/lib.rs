@@ -23,7 +23,7 @@ pub struct FontConfig {
     pub font_name: String,
 }
 
-#[wasm_bindgen]
+#[wasm_bindgen(js_name = loadFont)]
 pub fn load_font(font_name: String, font_data: Vec<u8>) {
     let mut font_map = FONT_MAP.lock().unwrap();
     let font = Font::try_from_vec(font_data).unwrap();
@@ -44,6 +44,7 @@ impl DrawImage {
         DrawImage { img }
     }
 
+    #[wasm_bindgen(js_name = fillRectangle)]
     pub fn fill_rectangle(&mut self, coords: Box<[u32]>, rgba: Box<[u8]>) {
         let [x1, y1, x2, y2]: [u32; 4] = (*coords).try_into().unwrap();
         let color: [u8; 4] = (*rgba).try_into().unwrap();
@@ -56,6 +57,7 @@ impl DrawImage {
         }
     }
 
+    #[wasm_bindgen(js_name = drawText)]
     pub fn draw_text(
         &mut self,
         coords: Box<[i32]>,
@@ -77,6 +79,7 @@ impl DrawImage {
         );
     }
 
+    #[wasm_bindgen(js_name = drawSpritePNG)]
     pub fn draw_sprite_png(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>) {
         let [left, top]: [u32; 2] = (*coords).try_into().unwrap();
         let decoded_sprite = PngDecoder::new(&*sprite).unwrap();
@@ -96,6 +99,7 @@ impl DrawImage {
         }
     }
 
+    #[wasm_bindgen(js_name = getPNGImage)]
     pub fn get_png_image(self) -> Vec<u8> {
         let mut output: Vec<u8> = Vec::new();
         let (width, height) = self.img.dimensions();
