@@ -4,7 +4,7 @@
 
 extern crate wasm_bindgen_test;
 use wasm_bindgen_test::*;
-use draw_wasm::{FontConfig, DrawImage, load_font};
+use simple_draw::{FontConfig, DrawImage, load_font};
 use serde_wasm_bindgen::*;
 
 // wasm_bindgen_test_configure!(run_in_browser);

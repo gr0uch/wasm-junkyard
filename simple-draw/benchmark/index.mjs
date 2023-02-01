@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 
 // to make this work, have to edit package.json there to `"type": "module"`
 // i dunno why this isn't the default...
-import { load_font, DrawImage } from "../pkg/draw_wasm.js";
+import { load_font, DrawImage } from "../pkg/simple_draw.js";
 
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";

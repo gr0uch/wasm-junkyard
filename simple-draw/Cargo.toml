@@ -1,5 +1,5 @@
 [package]
-name = "draw-wasm"
+name = "simple-draw"
 version = "0.1.0"
 authors = ["Dali Zheng <d@liwa.li>"]
 edition = "2021"

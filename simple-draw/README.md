@@ -1,8 +1,8 @@
-# draw-wasm
+# simple-draw
 
 Just a simple little wrapper around `image`, `imageproc`, `rusttype` intended for WebAssembly usage from Node.js or any headless JS runtime.
 
-![test image](/draw-wasm/tests/test-1.png?raw=true)
+![test image](/simple-draw/tests/test-1.png?raw=true)
 
 
 ## Features
@@ -22,7 +22,7 @@ See auto-generated TS annotations.
 ## Benchmark
 
 ```
-makeImgDrawWasm done in 105 ms
+makeImgSimpleDraw done in 105 ms
 makeImgSatori done in 7708 ms
 ```
 

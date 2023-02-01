@@ -1,5 +1,5 @@
 {
-  "name": "draw-wasm-benchmark",
+  "name": "simple-draw-benchmark",
   "type": "module",
   "version": "1.0.0",
   "description": "",
@@ -10,7 +10,7 @@
   "author": "",
   "dependencies": {
     "@resvg/resvg-js": "^2.2.0",
-    "draw-wasm": "file:../pkg",
+    "simple-draw": "file:../pkg",
     "satori": "^0.1.1"
   },
   "license": "ISC"

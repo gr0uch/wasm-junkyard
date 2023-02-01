@@ -2,5 +2,5 @@
 
 Just a dumping ground for WebAssembly experiments.
 
-- [draw-wasm](./draw-wasm)
+- [simple-draw](./simple-draw)
 - [parallel-search](./parallel-search)
