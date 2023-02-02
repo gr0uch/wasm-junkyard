@@ -4,7 +4,7 @@ use image::{
     codecs::png::PngEncoder, io::Reader as ImageReader, DynamicImage, ImageBuffer, ImageEncoder,
     Rgba, RgbaImage,
 };
-use imageproc::drawing::draw_text_mut;
+use imageproc::drawing::{draw_text_mut, text_size};
 use once_cell::sync::Lazy;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
@@ -65,20 +65,24 @@ impl DrawImage {
     }
 
     #[wasm_bindgen(js_name = drawText)]
-    pub fn draw_text(&mut self, coords: Box<[i32]>, font_config: JsValue, text: String) {
+    pub fn draw_text(&mut self, coords: Box<[i32]>, font_config: JsValue, text: String) -> Vec<i32> {
         let [left, top]: [i32; 2] = (*coords).try_into().unwrap();
         let config: FontConfig = serde_wasm_bindgen::from_value(font_config).unwrap();
         let color: [u8; 4] = (*config.rgba).try_into().unwrap();
         let font_map = FONT_MAP.lock().unwrap();
+        let scale = Scale::uniform(config.size);
+        let font = font_map.get(&config.font_name).unwrap();
         draw_text_mut(
             &mut self.img,
             Rgba::from(color),
             left,
             top,
-            Scale::uniform(config.size),
-            font_map.get(&config.font_name).unwrap(),
+            scale,
+            font,
             &text,
         );
+        let size = text_size(scale, font, &text);
+        vec![size.0, size.1]
     }
 
     #[wasm_bindgen(js_name = drawSprite)]
