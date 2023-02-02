@@ -8,7 +8,7 @@ Just a simple little wrapper around `image`, `imageproc`, `rusttype` intended fo
 ## Features
 
 - [x] Fill rectangle with solid color.
-- [x] Draw PNGs as blended sprites, and optionally resize them.
+- [x] Draw PNGs and WebPs as blended sprites, and optionally resize them.
 - [x] Draw text with custom fonts, sizes, & colors.
 - [x] Export PNG image.
 - [ ] Do a barrel roll.

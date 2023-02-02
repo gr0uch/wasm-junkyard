@@ -2,6 +2,7 @@ mod utils;
 
 use image::{
     codecs::png::{PngDecoder, PngEncoder},
+    codecs::webp::WebPDecoder,
     ImageBuffer, ImageDecoder, ImageEncoder, Pixel, Rgba, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
@@ -82,12 +83,26 @@ impl DrawImage {
 
     #[wasm_bindgen(js_name = drawSpritePNG)]
     pub fn draw_sprite_png(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
-        let [left, top]: [u32; 2] = (*coords).try_into().unwrap();
         let decoded_sprite = PngDecoder::new(&*sprite).unwrap();
-        let (mut w, mut h) = decoded_sprite.dimensions();
+        let (w, h) = decoded_sprite.dimensions();
         let mut sprite_image: RgbaImage = ImageBuffer::new(w, h);
         decoded_sprite.read_image(&mut sprite_image).unwrap();
+        self.draw_sprite(coords, sprite_image, options)
+    }
 
+    #[wasm_bindgen(js_name = drawSpriteWebP)]
+    pub fn draw_sprite_webp(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
+        let decoded_sprite = WebPDecoder::new(&*sprite).unwrap();
+        let (w, h) = decoded_sprite.dimensions();
+        let mut sprite_image: RgbaImage = ImageBuffer::new(w, h);
+        decoded_sprite.read_image(&mut sprite_image).unwrap();
+        self.draw_sprite(coords, sprite_image, options)
+    }
+
+    fn draw_sprite(&mut self, coords: Box<[u32]>, mut sprite_image: RgbaImage, options: JsValue) {
+        let (mut w, mut h) = sprite_image.dimensions();
+
+        let [left, top]: [u32; 2] = (*coords).try_into().unwrap();
         let opts = serde_wasm_bindgen::from_value(options);
         if opts.is_ok() {
             let opt: SpriteOptions = opts.unwrap();
