@@ -1,14 +1,14 @@
 mod utils;
 
 use image::{
-    codecs::png::{PngDecoder, PngEncoder},
-    codecs::webp::WebPDecoder,
-    ImageBuffer, ImageDecoder, ImageEncoder, Pixel, Rgba, RgbaImage,
+    codecs::png::PngEncoder, io::Reader as ImageReader, DynamicImage, ImageBuffer, ImageEncoder,
+    Rgba, RgbaImage,
 };
 use imageproc::drawing::draw_text_mut;
 use once_cell::sync::Lazy;
 use rusttype::{Font, Scale};
 use serde::{Deserialize, Serialize};
+use std::io::Cursor;
 use std::{collections::HashMap, sync::Mutex};
 use wasm_bindgen::prelude::*;
 
@@ -81,35 +81,27 @@ impl DrawImage {
         );
     }
 
-    #[wasm_bindgen(js_name = drawSpritePNG)]
-    pub fn draw_sprite_png(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
-        let decoded_sprite = PngDecoder::new(&*sprite).unwrap();
-        let (w, h) = decoded_sprite.dimensions();
-        let mut sprite_image: RgbaImage = ImageBuffer::new(w, h);
-        decoded_sprite.read_image(&mut sprite_image).unwrap();
-        self.draw_sprite(coords, sprite_image, options)
+    #[wasm_bindgen(js_name = drawSprite)]
+    pub fn draw_sprite(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
+        let decoded_sprite = ImageReader::new(Cursor::new(&*sprite))
+            .with_guessed_format()
+            .unwrap();
+        let sprite_image = decoded_sprite.decode().unwrap();
+        self.draw_on_image(coords, sprite_image, options)
     }
 
-    #[wasm_bindgen(js_name = drawSpriteWebP)]
-    pub fn draw_sprite_webp(&mut self, coords: Box<[u32]>, sprite: Box<[u8]>, options: JsValue) {
-        let decoded_sprite = WebPDecoder::new(&*sprite).unwrap();
-        let (w, h) = decoded_sprite.dimensions();
-        let mut sprite_image: RgbaImage = ImageBuffer::new(w, h);
-        decoded_sprite.read_image(&mut sprite_image).unwrap();
-        self.draw_sprite(coords, sprite_image, options)
-    }
-
-    fn draw_sprite(&mut self, coords: Box<[u32]>, mut sprite_image: RgbaImage, options: JsValue) {
-        let (mut w, mut h) = sprite_image.dimensions();
-
+    fn draw_on_image(
+        &mut self,
+        coords: Box<[u32]>,
+        mut sprite_image: DynamicImage,
+        options: JsValue,
+    ) {
         let [left, top]: [u32; 2] = (*coords).try_into().unwrap();
         let opts = serde_wasm_bindgen::from_value(options);
         if opts.is_ok() {
             let opt: SpriteOptions = opts.unwrap();
             let target_w = opt.resize[0];
             let target_h = opt.resize[1];
-            w = target_w;
-            h = target_h;
             let filter_type = match opt.filter_type.as_str() {
                 "Nearest" => image::imageops::FilterType::Nearest,
                 "Triangle" => image::imageops::FilterType::Triangle,
@@ -118,19 +110,15 @@ impl DrawImage {
                 "Lanczos3" => image::imageops::FilterType::Lanczos3,
                 _ => panic!("invalid filter type!"),
             };
-            sprite_image = image::imageops::resize(&sprite_image, target_w, target_h, filter_type);
+            sprite_image = image::DynamicImage::ImageRgba8(image::imageops::resize(
+                &sprite_image,
+                target_w,
+                target_h,
+                filter_type,
+            ));
         }
 
-        for x in 0..w {
-            for y in 0..h {
-                let i_x = x + left;
-                let i_y = y + top;
-                let sprite_pixel = *sprite_image.get_pixel(x, y);
-                let mut image_pixel = *self.img.get_pixel(i_x, i_y);
-                image_pixel.blend(&sprite_pixel);
-                self.img.put_pixel(i_x, i_y, image_pixel);
-            }
-        }
+        image::imageops::overlay(&mut self.img, &sprite_image, left.into(), top.into());
     }
 
     #[wasm_bindgen(js_name = getPNGImage)]
