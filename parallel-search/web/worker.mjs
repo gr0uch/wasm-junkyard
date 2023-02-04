@@ -24,7 +24,7 @@ const api = {
 
     const t1 = Date.now();
     let i = 0;
-    for (const word in json) {
+    for (const word of json) {
       index.loadResult(word);
       i++;
     }
