@@ -23,11 +23,11 @@ console_error_panic_hook = { version = "0.1.7", optional = true }
 # compared to the default allocator's ~10K. It is slower than the default
 # allocator, however.
 wee_alloc = { version = "0.4.5", optional = true }
-sublime_fuzzy = { version = "0.7.0", features = ["serde_support"] }
 serde-wasm-bindgen = "0.4.5"
 serde = { version = "1.0.152", features = ["derive"] }
 rayon = "1.6.1"
 wasm-bindgen-rayon = { version = "1.0.3", features = ["no-bundler"] }
+fuzzy-matcher = "0.3.7"
 
 [dev-dependencies]
 wasm-bindgen-test = "0.3.33"
